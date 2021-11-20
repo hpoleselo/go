@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"simple_local_server/pkg/handlers"
 )
 
 // cannot be changed in the application
@@ -27,9 +28,9 @@ func main() {
 
 	})
 
-	http.HandleFunc("/about", About)
+	http.HandleFunc("/about", handlers.About)
 
-	http.HandleFunc("/divide", Divide)
+	http.HandleFunc("/divide", handlers.Divide)
 
 	fmt.Println(fmt.Sprintf("Starting application on port %s...", portNumber))
 	// Start a web server to listen for requests, ignoring error messages btw
