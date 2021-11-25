@@ -25,13 +25,23 @@ func PrintInfo(a Animal) {
 	log.Println("This animal says", a.Says(), "and has", a.HasNumberOfLegs(), "legs")
 }
 
-
+// The method has a receiver which is the struct
 func (d Dog) Says() string {
 	return "Woof"
 }
 
-func (d Dog) HasNumberOfLegs int {
+func (d Dog) HasNumberOfLegs() int {
 	return 4
+}
+
+// In case of Gorilla struct we're passing the pointer
+// This is an awesome practice, MOST RECEIVERS ARE POINTER TYPES, it makes faster and simpler
+func (g *Gorilla) Says() string {
+	return "Urgh"
+}
+
+func (g *Gorilla) HasNumberOfLegs() int {
+	return 2
 }
 
 func main() {
@@ -49,5 +59,6 @@ func main() {
 	// Now we try to print the information about the animal
 	// But passing only dog as parameter doesn't work as dog doesn't implement the necessary interface (methods), that's why we have to declare a function just for that
 	PrintInfo(dog)
+	PrintInfo(&gorilla)
 
 }
