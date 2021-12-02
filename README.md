@@ -67,6 +67,15 @@ Defining a behavior for our Struct:
 Inheritance in Go, I mean, COMPOSITION:
 	Go's type system doesn't support inheritance. Composition is preferred. 
 
+## BigQuery Connection
+
+In order to work out the example, make sure to have a BigQuery connection and use the following SQL statement to insert the data into the table:
+
+```sql
+INSERT INTO `YOUR_GCP_PROJECT.YOUR_DATASET.golang_table_test` (firstName, lastName, age)
+VALUES ("Henrivis", "Poleselo", 25);
+```
+
 ## Resources
 
 Initial Tutorials:
