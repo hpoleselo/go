@@ -104,8 +104,6 @@ func ParseDataFromPost(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// Set Response to be a JSON
-	w.Header().Set("Content-Type", "application/json")
 	err = decoder.Decode(&struct{}{})
 	if err != io.EOF {
 		msg := "Request body must only contain a single JSON object"
@@ -115,4 +113,18 @@ func ParseDataFromPost(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Received Payload:", pschema)
 
+	// Set Response to be a JSON
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(http.StatusOK)
+
+	// Marshall data to return as JSON as well
+
+	marshelledData, err := json.Marshal(pschema)
+	if err != nil {
+		log.Println("Could not marshal retrieved payload.")
+		http.Error(w, "Could not marshal retrieved payload.", http.StatusBadRequest)
+	}
+
+	w.Write(marshelledData)
 }
