@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"simple_local_server/schemas"
+
 	"github.com/golang/gddo/httputil/header"
 )
 
@@ -19,11 +21,7 @@ import (
 
 // TODO: Add validate field
 // field string `json:"modelGUID" validate:"required"`
-type PayloadSchema struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Age       int    `json:"age"`
-}
+//https://stackoverflow.com/questions/62522747/golang-validator-with-custom-structs
 
 func ParseDataFromPost(w http.ResponseWriter, r *http.Request) {
 
@@ -47,7 +45,7 @@ func ParseDataFromPost(w http.ResponseWriter, r *http.Request) {
 	// If there are unknown fields, error will be thrown
 	decoder.DisallowUnknownFields()
 
-	var pschema PayloadSchema
+	pschema := &schemas.PayloadSchema{}
 	err := decoder.Decode(&pschema)
 
 	if err != nil {
