@@ -2,16 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"strings"
 
 	"simple_local_server/schemas"
-
-	"github.com/golang/gddo/httputil/header"
+	"simple_local_server/utils"
 )
 
 // Source: https://www.alexedwards.net/blog/how-to-properly-parse-a-json-request-body
@@ -24,92 +19,15 @@ import (
 //https://stackoverflow.com/questions/62522747/golang-validator-with-custom-structs
 
 func ParseDataFromPost(w http.ResponseWriter, r *http.Request) {
-
-	// Checks if header has the type application/json
-	if r.Header.Get("Content-Type") != "" {
-		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
-		if value != "application/json" {
-			msg := "Content-Type header is not application/json"
-			http.Error(w, msg, http.StatusUnsupportedMediaType)
-			return
-		}
-	}
-
-	// Forcing the response body to be max of 1MB and prevent Decode() error
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+	pschema := &schemas.PayloadSchema{}
 
 	log.Println("Received POST request, parsing data...")
 
-	decoder := json.NewDecoder(r.Body)
-
-	// If there are unknown fields, error will be thrown
-	decoder.DisallowUnknownFields()
-
-	pschema := &schemas.PayloadSchema{}
-	err := decoder.Decode(&pschema)
+	err := utils.ValidateJSONBody(w, r, pschema)
 
 	if err != nil {
-		var syntaxError *json.SyntaxError
-		var unmarshalTypeError *json.UnmarshalTypeError
-
-		switch {
-		// Catch any syntax errors in the JSON and send an error message
-		// which interpolates the location of the problem to make it
-		// easier for the client to fix.
-		case errors.As(err, &syntaxError):
-			msg := fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
-			http.Error(w, msg, http.StatusBadRequest)
-
-		// In some circumstances Decode() may also return an
-		// io.ErrUnexpectedEOF error for syntax errors in the JSON. There
-		// is an open issue regarding this at
-		// https://github.com/golang/go/issues/25956.
-		case errors.Is(err, io.ErrUnexpectedEOF):
-			msg := fmt.Sprintf("Request body contains badly-formed JSON")
-			http.Error(w, msg, http.StatusBadRequest)
-
-		// Catch any type errors, like trying to assign a string in the
-		// JSON request body to a int field in our Person struct. We can
-		// interpolate the relevant field name and position into the error
-		// message to make it easier for the client to fix.
-		case errors.As(err, &unmarshalTypeError):
-			msg := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			http.Error(w, msg, http.StatusBadRequest)
-
-		// Catch the error caused by extra unexpected fields in the request
-		// body. We extract the field name from the error message and
-		// interpolate it in our custom error message.
-		case strings.HasPrefix(err.Error(), "json: unknown field "):
-			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
-			http.Error(w, msg, http.StatusBadRequest)
-
-		// An io.EOF error is returned by Decode() if the request body is empty.
-		case errors.Is(err, io.EOF):
-			msg := "Request body must not be empty"
-			http.Error(w, msg, http.StatusBadRequest)
-
-		// Catch the error caused by the request body being too large.
-		case err.Error() == "http: request body too large":
-			msg := "Request body must not be larger than 1MB"
-			http.Error(w, msg, http.StatusRequestEntityTooLarge)
-
-		// Otherwise default to logging the error and sending a 500 Internal Server Error response.
-		default:
-			log.Println(err.Error())
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-
+		log.Println("JSON Body isn't valid: ", err)
 	}
-
-	err = decoder.Decode(&struct{}{})
-	if err != io.EOF {
-		msg := "Request body must only contain a single JSON object"
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	log.Println("Received Payload:", pschema)
 
 	// Set Response to be a JSON
 	w.Header().Set("Content-Type", "application/json")
@@ -125,4 +43,5 @@ func ParseDataFromPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(marshelledData)
+	log.Println("Data has been parsed and returned.")
 }
