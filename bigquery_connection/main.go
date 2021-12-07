@@ -10,11 +10,17 @@ import (
 )
 
 // TODO: Add dataset variables to the config file (which uses struct)
-const projectID = "YOUR_PROJECT_ID"
-const datasetID = "YOUR_DATASET_ID"
-const tableID = "YOUR_TABLE_NAME"
+const projectID = "YOUR_PROJECT"
+const datasetID = "YOUR_DATASET"
+const tableID = "golang_table_test"
 
 //tablePath := projectID + "." + datasetID + "." + tableID
+
+type TableSchema struct {
+	FirstName string //`bigquery:"firstName"`
+	LastName  string //`bigquery:"lastName"`
+	Age       int    //`bigquery:"age"`
+}
 
 func main() {
 
@@ -29,9 +35,9 @@ func main() {
 	defer client.Close()
 
 	q := client.Query(
-		"SELECT * FROM `mlopsplatform.model_catalog.model_catalog_table_t` " +
-			"WHERE modelStatus = \"Unprocessed\" ")
+		"SELECT * FROM `mlopsplatform.model_catalog.golang_table_test`")
 	q.Location = "US"
+
 	// Run the query and print results when the query job is completed.
 	job, err := q.Run(ctx)
 	if err != nil {
@@ -61,8 +67,8 @@ func main() {
 		//fmt.Errorf("")
 	} else {
 		for {
-			var row []bigquery.Value
-			err := it.Next(&row)
+			var ts TableSchema
+			err := it.Next(&ts)
 			if err == iterator.Done {
 				log.Println("Read all rows.")
 				break
@@ -71,8 +77,19 @@ func main() {
 				log.Println("Error while reading table's rows:", err)
 				//return err
 			}
-			log.Println(&row)
+			// Acessing each row value based on the column's names
+			fmt.Println(ts.FirstName)
+			fmt.Println(ts.LastName)
+			//namesSlice := storeNames(ts.FirstName)
 		}
 	}
 
+	//log.Println("Names retrieved:", namesSlice)
+
+}
+
+func storeNames(bigQueryRow string) []string {
+	var namesSlice []string
+	namesSlice = append(namesSlice, bigQueryRow)
+	return namesSlice
 }
